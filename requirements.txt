@@ -3,6 +3,7 @@
 
 PySide6>=6.5
 frida>=16.0
+mutagen>=1.47
 
 # 说明：
 # - 只做解密，不再需要 ffmpeg.exe（以前转 MP3 才用）。

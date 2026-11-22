@@ -4656,7 +4656,7 @@ class TuneFreeWindow(QMainWindow):
         self.opt_btn.setObjectName("pillBtn")
         self.opt_btn.setFixedHeight(36)
         self.opt_btn.setCursor(Qt.PointingHandCursor)
-        self.opt_btn.setToolTip("是否重新解密已存在的文件")
+        self.opt_btn.setToolTip("是否自动补封面、是否重新解密")
         self.opt_btn.clicked.connect(self.show_options)
         lay.addWidget(self.opt_btn)
 
@@ -4792,10 +4792,13 @@ class TuneFreeWindow(QMainWindow):
         line.setFixedHeight(1)
         lay.addWidget(line)
 
+        self.cb_cover = QCheckBox("没有封面时自动补上")
+        self.cb_cover.setToolTip("从 QQ 音乐的专辑图缓存里挑最大的一张写进文件")
         self.cb_force = QCheckBox("重新解密已存在的文件")
         self.cb_force.setToolTip("默认跳过已经解出来的，勾上则覆盖重解")
-        self.cb_force.stateChanged.connect(self.on_options_changed)
-        lay.addWidget(self.cb_force)
+        for cb in (self.cb_cover, self.cb_force):
+            cb.stateChanged.connect(self.on_options_changed)
+            lay.addWidget(cb)
 
         self.opt_panel = panel
         return panel
@@ -4813,6 +4816,7 @@ class TuneFreeWindow(QMainWindow):
 
     def on_options_changed(self, *_args):
         try:
+            self.settings.setValue("ui/cover", "1" if self.cb_cover.isChecked() else "0")
             self.settings.setValue("ui/force", "1" if self.cb_force.isChecked() else "0")
         except Exception:
             pass
@@ -5237,6 +5241,7 @@ QPushButton#swatchBtn { border-radius: 8px; border: 1px solid %(line)s; }
         valid = [k for k, _ in NAME_FORMATS]
         self.name_format = mode if mode in valid else valid[0]
 
+        self.cb_cover.setChecked(str(s.value("ui/cover", "1")) in ("1", "true", "True"))
         self.cb_force.setChecked(str(s.value("ui/force", "0")) in ("1", "true", "True"))
 
         # 第 11 节的行为开关：托盘常驻、完成通知、全局媒体键、迷你播放器
@@ -5259,6 +5264,7 @@ QPushButton#swatchBtn { border-radius: 8px; border: 1px solid %(line)s; }
         s.setValue("ui/dark", "1" if self.is_dark else "0")
         s.setValue("ui/font_scale", self.font_scale)
         s.setValue("ui/lyric_font_scale", self.lyric_font_scale)
+        s.setValue("ui/cover", "1" if self.cb_cover.isChecked() else "0")
         s.setValue("ui/force", "1" if self.cb_force.isChecked() else "0")
         s.setValue("ui/last_input", self.input_dir)
         s.setValue("ui/name_format", self.name_format)
@@ -6300,6 +6306,7 @@ QPushButton#swatchBtn { border-radius: 8px; border: 1px solid %(line)s; }
             flac_dir=os.path.join(root, "flac"),
             ogg_dir=os.path.join(root, "ogg"),
             force=self.cb_force.isChecked(),
+            embed_covers=self.cb_cover.isChecked(),
             session=getattr(self, "_scan_session", None),
             on_event=self.emit_event,
         )

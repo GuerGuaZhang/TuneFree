@@ -30,6 +30,7 @@ import time
 import traceback
 from pathlib import Path
 
+import coverart
 import scanner
 import session as qsession
 
@@ -105,15 +106,16 @@ def force_remove(file_path, max_retries=5, delay=0.2):
 
 # -------------------- 任务执行器 --------------------
 class Runner:
-    """一次完整的解密任务。"""
+    """一次完整的「解密 + 补封面」任务。"""
 
     def __init__(self, input_dir, flac_dir=None, ogg_dir=None, force=False,
-                 on_event=None, hook_path=None, session=None):
+                 embed_covers=True, on_event=None, hook_path=None, session=None):
         self.input_dir = os.path.abspath(input_dir)
         default_root = os.path.join(self.input_dir, "output")
         self.flac_dir = os.path.abspath(flac_dir) if flac_dir else os.path.join(default_root, "flac")
         self.ogg_dir = os.path.abspath(ogg_dir) if ogg_dir else os.path.join(default_root, "ogg")
         self.force = bool(force)
+        self.embed_covers = bool(embed_covers)
         self.on_event = on_event
         self.hook_path = hook_path or qsession.default_hook_path()
         self._tmp_seq = itertools.count()
@@ -219,6 +221,17 @@ class Runner:
             finally:
                 force_remove(tmp)
 
+    def _add_cover(self, track, dst):
+        """解密完补封面；返回是否真的写进去了。失败只记日志。"""
+        if not self.embed_covers:
+            return False
+        try:
+            status = coverart.ensure_cover(dst, artist=track.artist or "", title=track.title or "")
+            return status == "embedded"
+        except Exception as e:
+            logging.warning("补封面出错：%s（%s）", os.path.basename(dst), e)
+            return False
+
     def run(self, tracks=None):
         """跑完整个任务。返回 summary。"""
         started = time.time()
@@ -286,14 +299,18 @@ class Runner:
                         result["skip"] += 1
                         track.status = "skipped"
                         track.message = "已存在，跳过"
+                        covered = self._add_cover(track, dst)
+                        if covered:
+                            track.message = "已存在；补上了封面"
                         track.output = dst
                         track.output_size = os.path.getsize(dst)
                         self._emit("item", {"track": track, "state": "skip",
                                             "message": track.message, "output": dst})
                     else:
                         self._decrypt_one(track, dst)
+                        covered = self._add_cover(track, dst)
                         track.status = "done"
-                        track.message = "已解密"
+                        track.message = "已解密" + ("，已补封面" if covered else "")
                         track.output = dst
                         try:
                             track.output_size = os.path.getsize(dst)
@@ -352,6 +369,7 @@ def parse_args(argv=None):
     parser.add_argument("-o", "--output", help="输出根目录（默认：输入目录下的 output）")
     parser.add_argument("--flac-dir", help="FLAC 输出目录（默认：<输出根目录>/flac）")
     parser.add_argument("--ogg-dir", help="OGG 输出目录（默认：<输出根目录>/ogg）")
+    parser.add_argument("--no-cover", action="store_true", help="不从 QQ音乐缓存补封面")
     parser.add_argument("--force", action="store_true", help="已经解出来的文件也重新解密")
     parser.add_argument("-v", "--version", action="version", version="TuneFree %s" % VERSION)
     return parser.parse_args(argv)
@@ -392,7 +410,7 @@ def main(argv=None):
     logging.info("OGG 输出: %s" % ogg_dir)
 
     runner = Runner(input_dir, flac_dir, ogg_dir,
-                    force=args.force,
+                    force=args.force, embed_covers=not args.no_cover,
                     on_event=_print_event)
     if not runner.connect():
         logging.error("%s；这次不会有任何输出" % _last_inject_error)

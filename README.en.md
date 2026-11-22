@@ -1,6 +1,6 @@
 # `TuneFree`
 
-**Turn the encrypted songs you downloaded in QQ Music (`.mflac` / `.mgg`) into standard `FLAC` / `OGG` that any player can open.**
+**Turn the encrypted songs you downloaded in QQ Music (`.mflac` / `.mgg`) into standard `FLAC` / `OGG` that any player can open — with cover art filled in automatically.**
 
 [![Release](https://img.shields.io/github/v/release/zksbx/TuneFree?color=2ea043&label=release)](https://github.com/zksbx/TuneFree/releases/latest)
 [![Downloads](https://img.shields.io/badge/downloads-3.6k%2B-3b82f6)](https://wwbtj.lanzouc.com/b01d7csi8j)
@@ -31,7 +31,7 @@ Some tracks downloaded in QQ Music come in encrypted containers:
 
 Only QQ Music can play these. Copy one to a car stereo, an MP3 player or any other player and all you get is "unsupported format".
 
-TuneFree does something simple: **it calls QQ Music's own decryption function inside the running process** and restores the file to a normal `FLAC`/`OGG`. No re-encoding.
+TuneFree does something simple: **it calls QQ Music's own decryption function inside the running process** and restores the file to a normal `FLAC`/`OGG`. No re-encoding. If the decrypted file has no cover, TuneFree pulls one from QQ Music's album-art cache and embeds it.
 
 ```
 .mflac  ──decrypt──▶  .flac
@@ -69,6 +69,7 @@ Your antivirus will still complain, and that is expected: TuneFree injects code 
 ## Features
 
 - 🎵 Batch decryption of `.mflac` / `.mgg`, walks subfolders automatically
+- 🖼 Automatic cover art: when the decrypted file has none, the largest album image from QQ Music's cache is embedded (`PICTURE` / `METADATA_BLOCK_PICTURE`)
 - 🏷 Format pills tell you where each track stands: `MFLAC` / `MGG` not decrypted yet, `FLAC` / `OGG` decrypted
 - 🗂 One-click filter pills (all / undecrypted / `MFLAC` / `MGG` / `FLAC` / `OGG`) with live counts, plus an artist filter
 - 🎧 Double-click any row to preview it; the player bar shows cover art and two lyric lines. Click the cover or **Immersive** for a full-page player: cover and controls on the left, bilingual lyrics on the right
@@ -119,6 +120,10 @@ QQ Music changed its internal function names, so the current build cannot inject
 - Downgrade QQ Music to a known-good version, or
 - Wait for TuneFree to support the new release (watch Releases)
 
+### The decrypted file has no cover
+
+Covers never travel with `.mflac` / `.mgg` — **Download album art** only makes QQ Music cache the image. After decrypting, TuneFree looks the cover up in `%APPDATA%\Tencent\QQMusic\QQMusicCache\QQMusicPicture` by artist + album and embeds it. If the cache has no match the file is left as-is (auto-cover can be turned off in the options).
+
 ### A handful of songs simply won't decrypt
 
 Check the quality tier first. Only **Standard / HQ / SQ** are supported; if a song was downloaded as **Hi-Res (臻品音质), Master (臻品母带) or Dolby Atmos** it carries no normal audio stream, so decryption always fails — re-download it at SQ or lower and retry.
@@ -156,6 +161,7 @@ Command-line options:
 | `-i, --input` | input folder, defaults to the current folder |
 | `-o, --output` | output root, defaults to `./output` (with `flac` / `ogg` inside) |
 | `--flac-dir` / `--ogg-dir` | set the `FLAC` / `OGG` output locations separately |
+| `--no-cover` | do not embed covers automatically |
 | `--force` | re-decrypt files that already exist |
 | `-v, --version` | print the version |
 
@@ -168,9 +174,10 @@ miniplayer.py        mini player window
 hotkeys.py           global media keys (low-level keyboard hook)
 player.py            playback wrapper around QMediaPlayer
 lyrics.py            lyric lookup, parsing and cache
-main.py              CLI / backend: inject, decrypt
+main.py              CLI / backend: inject, decrypt, embed covers
 scanner.py           scans the music folder, reads metadata, finds covers
 metainfo.py          FLAC / OGG / MP3 header parsing
+coverart.py          finds covers in QQ Music's cache and embeds them
 session.py           session / process-injection helpers
 hook_qq_music.js     Frida injection script (the decryption core)
 version.py           single source of truth for the version and repo URL
@@ -196,6 +203,7 @@ One reminder: MIT covers the **code**. It does not loosen the limits on **how yo
 
 - [Frida](https://frida.re/) — process injection
 - [FFmpeg](https://ffmpeg.org/) — audio format reference (no longer used for encoding)
+- [mutagen](https://mutagen.readthedocs.io/) — cover art and tag I/O
 - [music-decryptor](https://github.com/ericjuice/music-decryptor) — where the decryption script started
 - [Unlock Music](https://github.com/unlock-music/unlock-music) — format parsing experience
 - [PyInstaller](https://pyinstaller.org/) — packaging

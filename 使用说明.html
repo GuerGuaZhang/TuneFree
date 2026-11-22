@@ -166,7 +166,7 @@
         <h1>🎵 TuneFree</h1>
         <div class="subtitle">把 QQ音乐下载的加密歌曲（<code>.mflac</code> / <code>.mgg</code>）还原成任何播放器都能放的 FLAC / OGG · v3.1.2</div>
 
-        <p><strong>TuneFree</strong> 在 QQ音乐进程里调用它自己的解密函数，把加密文件还原成正常的 FLAC / OGG，不转码。全程在你自己的电脑上完成，不上传任何文件。</p>
+        <p><strong>TuneFree</strong> 在 QQ音乐进程里调用它自己的解密函数，把加密文件还原成正常的 FLAC / OGG，不转码。解密完成后如果文件里没有封面，会自动从 QQ音乐的专辑图缓存补一张。全程在你自己的电脑上完成，不上传任何文件。</p>
 
         <pre>.mflac  ──解密──▶  .flac
 .mgg    ──解密──▶  .ogg</pre>
@@ -174,6 +174,7 @@
         <h2>✨ 功能特点</h2>
         <ul>
             <li><span class="badge">批量解密</span> 自动递归子文件夹，一次处理整库。</li>
+            <li><span class="badge">补封面</span> 解密后文件里没有图，就从 QQ音乐的专辑图缓存挑最大的一张写进去。</li>
             <li><span class="badge">看得清</span> 列表里每首歌都标着它现在的格式：没解密是 <code>MFLAC</code> / <code>MGG</code>，解密后是 <code>FLAC</code> / <code>OGG</code>。</li>
             <li><span class="badge">筛选</span> 顶部一排格式胶囊（全部 / 未解密 / MFLAC / MGG / FLAC / OGG），点一下就是筛选，计数实时更新；最右的「筛选」还能按歌手过滤。</li>
             <li><span class="badge">能听</span> 双击列表里的歌就地试听，底部播放条带封面和两行歌词；点封面或「沉浸」进整页播放页，右边是中英双语歌词。</li>
@@ -216,6 +217,7 @@
         <h2>⚙️ 解密选项</h2>
         <p>点顶栏的「解密选项」，这些设置对下一次点「开始解密」生效：</p>
         <ul>
+            <li><strong>没有封面时自动补上</strong>：从 QQ音乐的专辑图缓存里按「歌手 + 专辑」挑最大的一张写进文件。</li>
             <li><strong>重新解密已存在的文件</strong>：默认跳过已经解出来的，勾上就全部重来一遍。</li>
         </ul>
 
@@ -258,6 +260,7 @@
             <li><strong>Q：顶栏一直显示「未连接」。</strong><br>A：先确认 QQ音乐开着并已登录，再点那个胶囊重连。QQ音乐刚更新过也可能要等 TuneFree 适配。</li>
             <li><strong>Q：双击一首歌提示「这个使不得 请先解密再试」。</strong><br>A：那首歌还没解密，先点「开始解密」。提示是浮窗，几秒后自己消失。</li>
             <li><strong>Q：解密报 <code>invalid size</code> 或提示版本不匹配。</strong><br>A：QQ音乐更新后改了内部函数名。把 QQ音乐降级到可用版本，或等 TuneFree 适配新版。</li>
+            <li><strong>Q：解密出来没有封面。</strong><br>A：「同时下载专辑图片」只是让 QQ音乐把图存进它自己的缓存。TuneFree 解密后会去缓存里按「歌手 + 专辑」找图写进文件；缓存没有就保持原样，可以在解密选项里关掉自动补封面。</li>
             <li><strong>Q：有少数歌死活解不出来。</strong><br>A：先看音质是不是 Hi-Res / 臻品母带 / 杜比全景声——这几档不支持。是标准 / HQ / SQ 的话，先在 QQ音乐里播放一遍再试。</li>
             <li><strong>Q：胶囊上 MGG 是 0，但文件夹里明明有。</strong><br>A：MGG / MFLAC 这两个胶囊统计的是磁盘上的文件（不管解没解密）；如果一个都没有，说明它们已经被整理到别处了。</li>
             <li><strong>Q：界面字太小 / 太大。</strong><br>A：设置 → 外观 → 字号，主界面和歌词可以分开调。</li>
@@ -271,6 +274,7 @@
                 <tr><td><code>-i</code> / <code>--input</code></td><td>输入目录，默认当前目录</td><td><code>TuneFree.exe --cli -i "D:\下载"</code></td></tr>
                 <tr><td><code>-o</code> / <code>--output</code></td><td>输出根目录，默认 <code>./output</code></td><td><code>TuneFree.exe --cli -o "E:\音乐"</code></td></tr>
                 <tr><td><code>--flac-dir</code> / <code>--ogg-dir</code></td><td>分别指定 FLAC / OGG 输出位置</td><td><code>--flac-dir "D:\无损"</code></td></tr>
+                <tr><td><code>--no-cover</code></td><td>不自动补封面</td><td><code>--no-cover</code></td></tr>
                 <tr><td><code>--force</code></td><td>已经解出来的文件也重新解密</td><td><code>--force</code></td></tr>
             </tbody>
         </table>
@@ -278,6 +282,7 @@
         <h2>🙏 鸣谢</h2>
         <ul>
             <li><a href="https://frida.re/" target="_blank" rel="noopener">Frida</a>：动态注入框架，解密靠它跟 QQMusic 进程对话。</li>
+            <li><a href="https://mutagen.readthedocs.io/" target="_blank" rel="noopener">mutagen</a>：封面与标签读写。</li>
             <li><a href="https://github.com/ericjuice/music-decryptor" target="_blank" rel="noopener">music-decryptor</a>：<code>hook_qq_music.js</code> 的起点。</li>
             <li><a href="https://pyinstaller.org/" target="_blank" rel="noopener">PyInstaller</a>：打包。</li>
             <li><strong>Unlock Music 社区</strong>：加密格式的解析经验。</li>

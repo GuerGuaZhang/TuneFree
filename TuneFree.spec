@@ -25,6 +25,13 @@ for pkg in ('frida',):
     binaries += b
     hiddenimports += h
 
+# mutagen 的格式处理器是运行时按需 import 的，静态分析收不全
+for pkg in ('mutagen',):
+    d, b, h = collect_all(pkg)
+    datas += d
+    binaries += b
+    hiddenimports += h
+
 a = Analysis(
     ['app.py'],
     pathex=[],
@@ -88,4 +95,3 @@ coll = COLLECT(
     upx=False,
     name='TuneFree',
 )
-

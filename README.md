@@ -1,6 +1,6 @@
 # `TuneFree`
 
-**把 QQ音乐下载的加密歌曲（`.mflac` / `.mgg`）一键还原成任何播放器都能放的 `FLAC` / `OGG`。**
+**把 QQ音乐下载的加密歌曲（`.mflac` / `.mgg`）一键还原成任何播放器都能放的 `FLAC` / `OGG`，并自动补上封面。**
 
 [![Release](https://img.shields.io/github/v/release/zksbx/TuneFree?color=2ea043&label=release)](https://github.com/zksbx/TuneFree/releases/latest)
 [![Downloads](https://img.shields.io/badge/downloads-3.6k%2B-3b82f6)](https://wwbtj.lanzouc.com/b01d7csi8j)
@@ -29,7 +29,7 @@
 
 这些文件只有 `QQ`音乐能放，拷到车机、`MP3`、其他播放器里全是「格式不支持」。
 
-`TuneFree` 做的事很简单：**在 `QQ`音乐进程内调用它自己的解密函数**，把文件还原成正常的 `FLAC/OGG`，不再转码。
+`TuneFree` 做的事很简单：**在 `QQ`音乐进程内调用它自己的解密函数**，把文件还原成正常的 `FLAC/OGG`，不再转码。解密完成后如果文件里没有封面，会自动从 QQ 音乐的专辑图缓存补一张。
 
 ```
 .mflac  ──解密──▶  .flac
@@ -67,6 +67,7 @@
 ## 功能
 
 - 🎵 支持 `.mflac` / `.mgg` 批量解密，自动递归子文件夹
+- 🖼 解密后自动补封面：文件里没有图时，从 QQ 音乐的专辑图缓存挑最大的一张写进 `PICTURE` / `METADATA_BLOCK_PICTURE`
 - 🏷 格式胶囊标清每首歌的当前形态：`MFLAC` / `MGG` 是还没解密，`FLAC` / `OGG` 是解密好了
 - 🗂 格式胶囊一键筛选：全部 / 未解密 / `MFLAC` / `MGG` / `FLAC` / `OGG`，计数实时更新；点「筛选」还能按歌手过滤
 - 🎧 双击列表就地试听，播放条带封面和两行歌词；点封面或「沉浸」进整页播放页，左边封面与进度、右边中英双语歌词
@@ -117,6 +118,10 @@ QQ音乐更新后改了内部函数名，当前版本注入不进去。
 - 把 QQ音乐降级到已知可用的版本，或者
 - 等 TuneFree 适配新版本（关注 Release）
 
+### 解密出来没有封面
+
+封面不会跟着 `.mflac` / `.mgg` 一起下载——「同时下载专辑图片」只是让 QQ音乐把图放进它自己的缓存。TuneFree 解密完成后会去 `%APPDATA%\Tencent\QQMusic\QQMusicCache\QQMusicPicture` 按「歌手 + 专辑」找图并写进文件；缓存里没有就保持原样（解密选项里可以关掉自动补封面）。
+
 ### 有少数歌死活解不出来
 
 先看音质。程序只支持 **标准 / HQ / SQ** 三档，如果这首歌在 QQ音乐里下的是 **Hi-Res（臻品音质）、臻品母带、杜比全景声**，拿到的就不是普通音频流，解密必然失败——把那首歌的音质改成 SQ 或更低，重新下载一次即可。
@@ -154,6 +159,7 @@ python main.py -i "D:\下载" -o "D:\音乐"
 | `-i, --input` | 输入目录，默认当前目录 |
 | `-o, --output` | 输出根目录，默认 `./output`（其下分 `flac` / `ogg`） |
 | `--flac-dir` / `--ogg-dir` | 分别指定 `FLAC` / `OGG` 输出位置 |
+| `--no-cover` | 不自动补封面 |
 | `--force` | 已经解出来的文件也重新解密 |
 | `-v, --version` | 显示版本号 |
 
@@ -166,9 +172,10 @@ miniplayer.py        迷你播放器小窗
 hotkeys.py           全局媒体键（低级键盘钩子）
 player.py            播放器封装（QMediaPlayer）
 lyrics.py            歌词匹配、解析与缓存
-main.py              命令行 / 后端：注入、解密
+main.py              命令行 / 后端：注入、解密、补封面
 scanner.py           扫描歌曲目录，读元信息、找封面
 metainfo.py          FLAC / OGG / MP3 头解析
+coverart.py          从 QQ音乐图片缓存找封面并写进 FLAC / OGG
 session.py           与会话/进程注入相关的封装
 hook_qq_music.js     Frida 注入脚本（解密核心）
 version.py           版本号与仓库地址的唯一来源
@@ -193,6 +200,7 @@ docs/                官网（静态单页，中英双语）
 ## 鸣谢
 
 - [Frida](https://frida.re/) — 进程注入
+- [mutagen](https://mutagen.readthedocs.io/) — 封面与标签读写
 - [FFmpeg](https://ffmpeg.org/) — 音频格式参考（本版不再用于转码）
 - [music-decryptor](https://github.com/ericjuice/music-decryptor) — 解密脚本的起点
 - [Unlock Music](https://github.com/unlock-music/unlock-music) — 加密格式的解析经验
